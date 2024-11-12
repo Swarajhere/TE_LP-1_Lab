@@ -1,115 +1,130 @@
-#include <iostream>
-#include <vector>
-#include <limits>
-#include <cstring>
-
+#include <bits/stdc++.h>
 using namespace std;
 
-const int INF = numeric_limits<int>::max(); // Represent infinity for unreachable paths
-
-// Function to perform row and column reduction to minimize the cost matrix
-void reduceMatrix(int **cost, int N) {
-    // Row reduction
-    for (int i = 0; i < N; i++) {
-        int rowMin = INF;
-        for (int j = 0; j < N; j++) {
-            if (cost[i][j] < rowMin) rowMin = cost[i][j];
-        }
-        if (rowMin != INF) {
-            for (int j = 0; j < N; j++) {
-                if (cost[i][j] != INF) cost[i][j] -= rowMin;
-            }
-        }
-    }
-
-    // Column reduction
-    for (int j = 0; j < N; j++) {
-        int colMin = INF;
-        for (int i = 0; i < N; i++) {
-            if (cost[i][j] < colMin) colMin = cost[i][j];
-        }
-        if (colMin != INF) {
-            for (int i = 0; i < N; i++) {
-                if (cost[i][j] != INF) cost[i][j] -= colMin;
-            }
-        }
-    }
+vector<int> final_path;
+vector<bool> visited;
+int final_res = INT_MAX;
+void copyToFinal(vector<int> &curr_path, int N)
+{
+    for (int i = 0; i < N; i++)
+        final_path[i] = curr_path[i];
+    final_path[N] = curr_path[0];
+}
+int firstMin(vector<vector<int>> &adj, int i, int N)
+{
+    int min = INT_MAX;
+    for (int k = 0; k < N; k++)
+        if (adj[i][k] < min && i != k)
+            min = adj[i][k];
+    return min;
 }
 
-// Recursive Branch and Bound TSP function
-void tsp(int **cost, vector<bool> &visited, int currCity, int currCost, int &minCost, vector<int> &path, vector<int> &bestPath, int N, int level) {
-    // Base case: all cities visited, add cost to return to start
-    if (level == N) {
-        int totalCost = currCost + cost[currCity][0]; // Complete cycle
-        if (totalCost < minCost) {
-            minCost = totalCost;
-            bestPath = path;
-            bestPath.push_back(0); // Include return to starting city
+int secondMin(vector<vector<int>> &adj, int i, int N)
+{
+    int first = INT_MAX, second = INT_MAX;
+    for (int j = 0; j < N; j++)
+    {
+        if (i == j)
+            continue;
+        if (adj[i][j] <= first)
+        {
+            second = first;
+            first = adj[i][j];
+        }
+        else if (adj[i][j] <= second && adj[i][j] != first)
+            second = adj[i][j];
+    }
+    return second;
+}
+
+void TSPRec(vector<vector<int>> &adj, int curr_bound, int curr_weight, int
+
+                                                                           level,
+            vector<int> &curr_path, int N)
+{
+
+    if (level == N)
+    {
+        if (adj[curr_path[level - 1]][curr_path[0]] != 0)
+        {
+            int curr_res = curr_weight +
+                           adj[curr_path[level - 1]][curr_path[0]];
+            if (curr_res < final_res)
+            {
+                copyToFinal(curr_path, N);
+                final_res = curr_res;
+            }
         }
         return;
     }
-
-    // Try visiting all unvisited cities
-    for (int i = 0; i < N; i++) {
-        if (!visited[i] && cost[currCity][i] != INF) { // If city is unvisited and reachable
-            int newCost = currCost + cost[currCity][i];
-
-            if (newCost < minCost) { // Prune paths with higher cost than minimum found
+    for (int i = 0; i < N; i++)
+    {
+        if (adj[curr_path[level - 1]][i] != 0 && !visited[i])
+        {
+            int temp = curr_bound;
+            curr_weight += adj[curr_path[level - 1]][i];
+            if (level == 1)
+                curr_bound -= ((firstMin(adj, curr_path[level - 1], N) + firstMin(adj, i, N)) / 2);
+            else
+                curr_bound -= ((secondMin(adj, curr_path[level - 1], N) +
+                                firstMin(adj, i, N)) /
+                               2);
+            if (curr_bound + curr_weight <
+                final_res)
+            {
+                curr_path[level] = i;
                 visited[i] = true;
-                path.push_back(i);
-
-                tsp(cost, visited, i, newCost, minCost, path, bestPath, N, level + 1);
-
-                // Backtrack
-                visited[i] = false;
-                path.pop_back();
+                TSPRec(adj, curr_bound, curr_weight, level + 1, curr_path, N);
             }
+            curr_weight -= adj[curr_path[level - 1]][i];
+            curr_bound = temp;
+            fill(visited.begin(), visited.end(), false);
+            for (int j = 0; j <= level - 1; j++)
+                visited[curr_path[j]] = true;
         }
     }
 }
 
-int main() {
-    int N;
-    cout << "Enter the number of cities: ";
-    cin >> N;
+void TSP(vector<vector<int>> &adj, int N)
+{
+    vector<int> curr_path(N + 1);
+    int curr_bound = 0;
+    final_path.resize(N + 1);
+    visited.resize(N, false);
+    for (int i = 0; i < N; i++)
+        curr_bound += (firstMin(adj, i, N) +
 
-    // Define cost matrix
-    int **cost = new int *[N];
-    for (int i = 0; i < N; i++) {
-        cost[i] = new int[N];
-        for (int j = 0; j < N; j++) {
-            cout << "Enter cost between city " << i + 1 << " and " << j + 1 << ": ";
-            cin >> cost[i][j];
-            if (i == j) cost[i][j] = INF; // No self-loop in TSP
+                       secondMin(adj, i, N));
+    curr_bound =
+
+        (curr_bound & 1) ? curr_bound / 2 + 1 :
+
+                         curr_bound / 2;
+
+    visited[0] = true;
+    curr_path[0] = 0;
+
+    TSPRec(adj, curr_bound, 0, 1, curr_path, N);
+}
+
+int main()
+{
+    int N;
+    cin >> N;
+    vector<vector<int>> adj(N, vector<int>(N));
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            cin >> adj[i][j];
         }
     }
+    TSP(adj, N);
+    cout << final_res << endl;
+    for (int i = 0; i <= N; i++)
 
-    // Reduce the matrix initially
-    reduceMatrix(cost, N);
-
-    vector<bool> visited(N, false);
-    visited[0] = true; // Start from city 0
-
-    int minCost = INF;
-    vector<int> path = {0}; // Path starting from city 0
-    vector<int> bestPath;   // Store the optimal path
-
-    // Start Branch and Bound TSP
-    tsp(cost, visited, 0, 0, minCost, path, bestPath, N, 1);
-
-    // Output result
-    cout << "Minimum cost of traveling all cities: " << minCost << endl;
-    cout << "Optimal Path: ";
-    for (int city : bestPath) {
-        cout << city + 1 << " ";
-    }
+        cout << final_path[i] << " ";
     cout << endl;
-
-    // Clean up dynamic memory
-    for (int i = 0; i < N; i++) {
-        delete[] cost[i];
-    }
-    delete[] cost;
 
     return 0;
 }
