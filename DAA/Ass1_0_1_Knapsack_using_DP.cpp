@@ -112,3 +112,66 @@ int main()
     return 0;
 }
 */
+
+// ----------------------------------------Memoization ---------------------------------------------------------
+// #include <iostream>
+// #include <vector>
+// #include <cstring>
+// using namespace std;
+
+// // Recursive function with memoization
+// int knapsackUtil(int ind, int W, vector<int> &profit, vector<int> &weight,
+//                  vector<vector<int>> &dp)
+// {
+//     // Base case
+//     if (ind == 0)
+//     {
+//         if (weight[0] <= W)
+//             return profit[0];
+//         return 0;
+//     }
+
+//     // If result already calculated
+//     if (dp[ind][W] != -1)
+//         return dp[ind][W];
+
+//     // Don't take current item
+//     int notTake = knapsackUtil(ind - 1, W, profit, weight, dp);
+
+//     // Take current item if possible
+//     int take = 0;
+//     if (weight[ind] <= W)
+//     {
+//         take = profit[ind] +
+//                knapsackUtil(ind - 1, W - weight[ind], profit, weight, dp);
+//     }
+
+//     // Store and return the maximum
+//     return dp[ind][W] = max(take, notTake);
+// }
+
+// int knapsack(int n, int W, vector<int> &profit, vector<int> &weight)
+// {
+//     // Initialize DP table with -1
+//     vector<vector<int>> dp(n, vector<int>(W + 1, -1));
+//     return knapsackUtil(n - 1, W, profit, weight, dp);
+// }
+
+// int main()
+// {
+//     int n, W;
+//     cin >> n >> W;
+
+//     vector<int> profit(n), weight(n);
+
+//     // Input profits
+//     for (int i = 0; i < n; i++)
+//         cin >> profit[i];
+
+//     // Input weights
+//     for (int i = 0; i < n; i++)
+//         cin >> weight[i];
+
+//     cout << knapsack(n, W, profit, weight) << endl;
+//     return 0;
+// }
