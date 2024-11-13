@@ -1,143 +1,209 @@
-#include <iostream>
-#include <vector>
-#include <climits>
-
+#include <bits/stdc++.h>
 using namespace std;
 
-vector<int> final_path;
-vector<bool> visited;
-int final_res = INT_MAX;
+// defining varibales
+#define N 4
+#define INF INT_MAX
 
-// Copy the current path to the final path
-void copyToFinal(const vector<int> &curr_path, int N)
+// structure for Node
+struct Node
 {
-    for (int i = 0; i < N; i++)
-        final_path[i] = curr_path[i];
-    final_path[N] = curr_path[0]; // Complete the cycle by returning to the start
-}
 
-// Get the minimum cost edge for a given row (node)
-int firstMin(const vector<vector<int>> &adj, int i, int N)
+    vector<pair<int, int>> path;
+    int matrix_reduced[N][N];
+    int cost;
+    int vertex;
+    int level;
+};
+
+// fucntion for creating a node
+Node *newNode(int matrix_parent[N][N], vector<pair<int, int>> const &path, int level, int i, int j)
 {
-    int min = INT_MAX;
-    for (int k = 0; k < N; k++)
+    Node *node = new Node;
+    node->path = path;
+
+    if (level != 0)
     {
-        if (adj[i][k] < min && i != k)
-            min = adj[i][k];
-    }
-    return min;
-}
 
-// Get the second minimum cost edge for a given row (node)
-int secondMin(const vector<vector<int>> &adj, int i, int N)
-{
-    int first = INT_MAX, second = INT_MAX;
-    for (int j = 0; j < N; j++)
-    {
-        if (i == j)
-            continue;
-        if (adj[i][j] <= first)
-        {
-            second = first;
-            first = adj[i][j];
-        }
-        else if (adj[i][j] <= second && adj[i][j] != first)
-        {
-            second = adj[i][j];
-        }
-    }
-    return second;
-}
-
-// Recursive function for Branch and Bound TSP
-void TSPRec(const vector<vector<int>> &adj, int curr_bound, int curr_weight, int level, vector<int> &curr_path, int N)
-{
-    if (level == N)
-    {
-        if (adj[curr_path[level - 1]][curr_path[0]] != 0)
-        {
-            int curr_res = curr_weight + adj[curr_path[level - 1]][curr_path[0]];
-            if (curr_res < final_res)
-            {
-                copyToFinal(curr_path, N);
-                final_res = curr_res;
-            }
-        }
-        return;
+        node->path.push_back(make_pair(i, j));
     }
 
-    for (int i = 0; i < N; i++)
+    memcpy(node->matrix_reduced, matrix_parent,
+           sizeof node->matrix_reduced);
+
+    for (int k = 0; level != 0 && k < N; k++)
     {
-        if (adj[curr_path[level - 1]][i] != 0 && !visited[i])
-        {
-            int temp = curr_bound;
-            curr_weight += adj[curr_path[level - 1]][i];
-
-            if (level == 1)
-                curr_bound -= (firstMin(adj, curr_path[level - 1], N) + firstMin(adj, i, N)) / 2;
-            else
-                curr_bound -= (secondMin(adj, curr_path[level - 1], N) + firstMin(adj, i, N)) / 2;
-
-            if (curr_bound + curr_weight < final_res)
-            {
-                curr_path[level] = i;
-                visited[i] = true;
-
-                TSPRec(adj, curr_bound, curr_weight, level + 1, curr_path, N);
-
-                visited[i] = false; // Backtrack
-            }
-
-            curr_weight -= adj[curr_path[level - 1]][i];
-            curr_bound = temp;
-        }
+        node->matrix_reduced[i][k] = INF;
+        node->matrix_reduced[k][j] = INF;
     }
+
+    node->matrix_reduced[j][0] = INF;
+    node->level = level;
+    node->vertex = j;
+
+    return node;
 }
 
-void TSP(const vector<vector<int>> &adj, int N)
+// function to reduce the matrix row wise
+void rowReduction(int matrix_reduced[N][N], int row[N])
 {
-    vector<int> curr_path(N + 1);
-    int curr_bound = 0;
-    final_path.resize(N + 1);
-    visited.resize(N, false);
 
-    for (int i = 0; i < N; i++)
-    {
-        curr_bound += (firstMin(adj, i, N) + secondMin(adj, i, N));
-    }
-    curr_bound /= 2;
+    fill_n(row, N, INF);
 
-    visited[0] = true;
-    curr_path[0] = 0;
-
-    TSPRec(adj, curr_bound, 0, 1, curr_path, N);
-}
-
-int main()
-{
-    int N;
-    cout << "Enter the number of cities: ";
-    cin >> N;
-
-    vector<vector<int>> adj(N, vector<int>(N));
-    cout << "Enter the cost matrix:\n";
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < N; j++)
         {
-            cin >> adj[i][j];
-            if (i == j)
-                adj[i][j] = INT_MAX;
+            if (matrix_reduced[i][j] < row[i])
+            {
+                row[i] = matrix_reduced[i][j];
+            }
         }
     }
 
-    TSP(adj, N);
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (matrix_reduced[i][j] != INF && row[i] != INF)
+            {
+                matrix_reduced[i][j] -= row[i];
+            }
+        }
+    }
+}
 
-    cout << "Minimum cost: " << final_res << endl;
-    cout << "Path: ";
-    for (int i = 0; i <= N; i++)
-        cout << final_path[i] + 1 << " ";
-    cout << endl;
+// function to reduce the matrix column wise
+void columnReduction(int matrix_reduced[N][N], int col[N])
+{
+    fill_n(col, N, INF);
+
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (matrix_reduced[i][j] < col[j])
+            {
+                col[j] = matrix_reduced[i][j];
+            }
+        }
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (matrix_reduced[i][j] != INF && col[j] != INF)
+            {
+                matrix_reduced[i][j] -= col[j];
+            }
+        }
+    }
+}
+
+// function to calculate cost of matrix after row and column reduction
+int costCal(int matrix_reduced[N][N])
+{
+    int cost = 0;
+
+    int row[N];
+    rowReduction(matrix_reduced, row);
+
+    int col[N];
+    columnReduction(matrix_reduced, col);
+
+    for (int i = 0; i < N; i++)
+    {
+        cost += (row[i] != INT_MAX) ? row[i] : 0,
+            cost += (col[i] != INT_MAX) ? col[i] : 0;
+    }
+
+    return cost;
+}
+
+// function to print the final path taken
+void pathTaken(vector<pair<int, int>> const &list)
+{
+    cout << "\n\nPath taken: \n\n";
+    for (int i = 0; (unsigned)i < list.size(); i++)
+    {
+        cout << list[i].first + 1 << "->" << list[i].second + 1 << endl;
+    }
+}
+
+// structure
+struct comp
+{
+    bool operator()(const Node *lhs, const Node *rhs) const
+    {
+        return lhs->cost > rhs->cost;
+    }
+};
+
+// function to implement traveling salesman problem
+int TSP(int costMatrix[N][N])
+{
+    priority_queue<Node *, vector<Node *>, comp> pq;
+
+    vector<pair<int, int>> v;
+
+    Node *root = newNode(costMatrix, v, 0, -1, 0);
+
+    root->cost = costCal(root->matrix_reduced);
+
+    pq.push(root);
+
+    while (!pq.empty())
+    {
+        Node *min = pq.top();
+        pq.pop();
+
+        int i = min->vertex;
+
+        if (min->level == N - 1)
+        {
+            min->path.push_back(make_pair(i, 0));
+            pathTaken(min->path);
+            return min->cost;
+        }
+
+        for (int j = 0; j < N; j++)
+        {
+            if (min->matrix_reduced[i][j] != INF)
+            {
+                Node *child = newNode(min->matrix_reduced, min->path, min->level + 1, i, j);
+                child->cost = min->cost + min->matrix_reduced[i][j] + costCal(child->matrix_reduced);
+                pq.push(child);
+            }
+        }
+        delete min;
+    }
+    return 0;
+}
+
+// main funciton
+int main()
+{
+    int costMatrix[N][N], result;
+    // taking user input for cost matrix
+    cout << "Enter the cost matrix  :: \n";
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (i == j)
+            {
+                costMatrix[i][j] = INF;
+            }
+            else
+            {
+                cout << "Enter the cost of edge " << i + 1 << " -> " << j + 1 << " : ";
+                cin >> costMatrix[i][j];
+            }
+        }
+    }
+    result = TSP(costMatrix);
+    cout << "\n\nTotal Cost :: " << result << "\n\n";
 
     return 0;
 }
