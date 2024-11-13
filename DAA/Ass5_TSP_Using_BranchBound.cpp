@@ -207,3 +207,39 @@ int main()
 
     return 0;
 }
+
+
+/*
+Enter the cost matrix  :: 
+Enter the cost of edge 1 -> 2 : 20
+Enter the cost of edge 1 -> 3 : 30
+Enter the cost of edge 1 -> 4 : 10
+Enter the cost of edge 1 -> 5 : 11
+Enter the cost of edge 2 -> 1 : 15
+Enter the cost of edge 2 -> 3 : 16
+Enter the cost of edge 2 -> 4 : 4
+Enter the cost of edge 2 -> 5 : 2
+Enter the cost of edge 3 -> 1 : 3
+Enter the cost of edge 3 -> 2 : 5
+Enter the cost of edge 3 -> 4 : 2
+Enter the cost of edge 3 -> 5 : 4
+Enter the cost of edge 4 -> 1 : 19
+Enter the cost of edge 4 -> 2 : 6
+Enter the cost of edge 4 -> 3 : 18
+Enter the cost of edge 4 -> 5 : 3
+Enter the cost of edge 5 -> 1 : 16
+Enter the cost of edge 5 -> 2 : 4
+Enter the cost of edge 5 -> 3 : 7
+Enter the cost of edge 5 -> 4 : 16
+
+
+Path taken:
+
+1->4
+4->2
+2->5
+5->3
+3->1
+
+
+Total Cost :: 28*/
